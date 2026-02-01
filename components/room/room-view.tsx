@@ -18,7 +18,7 @@ type Props = {
 
 export function RoomView({ code, participantId, showShareDialog }: Props) {
   const router = useRouter()
-  const { room, error, loading, refetch } = useRoom(code)
+  const { room, error, loading, refetch } = useRoom(code, participantId)
 
   useEffect(() => {
     if (participantId || !room) return
@@ -27,6 +27,18 @@ export function RoomView({ code, participantId, showShareDialog }: Props) {
       router.replace(`/room/${code}?pid=${stored}`)
     }
   }, [code, participantId, room, router])
+
+  useEffect(() => {
+    if (!participantId || typeof window === "undefined") return
+    const pid = participantId
+    function handleUnload() {
+      navigator.sendBeacon(
+        `/api/room/${code}/leave?pid=${encodeURIComponent(pid)}`
+      )
+    }
+    window.addEventListener("pagehide", handleUnload)
+    return () => window.removeEventListener("pagehide", handleUnload)
+  }, [code, participantId])
 
   if (loading) {
     return (
