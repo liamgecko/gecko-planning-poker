@@ -21,17 +21,14 @@ export function clearStoredParticipantId(code: string) {
   localStorage.removeItem(`${STORAGE_KEY_PREFIX}${code}`)
 }
 
-export function useRoom(code: string, participantId?: string | null) {
+export function useRoom(code: string) {
   const [room, setRoom] = useState<Room | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchRoom = useCallback(async () => {
     try {
-      const url = participantId
-        ? `/api/room/${code}?pid=${encodeURIComponent(participantId)}`
-        : `/api/room/${code}`
-      const res = await fetch(url)
+      const res = await fetch(`/api/room/${code}`)
       if (!res.ok) {
         if (res.status === 404) {
           setError("Room not found")
@@ -47,7 +44,7 @@ export function useRoom(code: string, participantId?: string | null) {
     } finally {
       setLoading(false)
     }
-  }, [code, participantId])
+  }, [code])
 
   useEffect(() => {
     fetchRoom()

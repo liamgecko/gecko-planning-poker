@@ -1,8 +1,6 @@
 import type { Participant, Room, Vote } from "@/features/poker/schema"
 
 const GLOBAL_ROOMS_KEY = "__planning_poker_rooms__"
-const GLOBAL_LAST_SEEN_KEY = "__planning_poker_last_seen__"
-const STALE_THRESHOLD_MS = 30_000
 
 function getRooms(): Map<string, Room> {
   if (typeof globalThis !== "undefined") {
@@ -18,57 +16,6 @@ function getRooms(): Map<string, Room> {
 }
 
 const rooms = getRooms()
-
-function getLastSeen(): Map<string, number> {
-  if (typeof globalThis !== "undefined") {
-    const existing = (globalThis as unknown as Record<string, Map<string, number> | undefined>)[
-      GLOBAL_LAST_SEEN_KEY
-    ]
-    if (existing) return existing
-    const map = new Map<string, number>()
-    ;(globalThis as unknown as Record<string, Map<string, number>>)[GLOBAL_LAST_SEEN_KEY] = map
-    return map
-  }
-  return new Map<string, number>()
-}
-
-const lastSeen = getLastSeen()
-
-function lastSeenKey(code: string, participantId: string): string {
-  return `${code.toUpperCase()}:${participantId}`
-}
-
-function updateLastSeen(code: string, participantId: string): void {
-  lastSeen.set(lastSeenKey(code, participantId), Date.now())
-}
-
-function pruneStaleParticipants(code: string): void {
-  const room = rooms.get(code.toUpperCase())
-  if (!room) return
-
-  const now = Date.now()
-  const toRemove: string[] = []
-  for (const p of room.participants) {
-    const key = lastSeenKey(code, p.id)
-    let seen = lastSeen.get(key)
-    if (seen === undefined) {
-      lastSeen.set(key, now)
-      continue
-    }
-    if (now - seen > STALE_THRESHOLD_MS) {
-      toRemove.push(p.id)
-      lastSeen.delete(key)
-    }
-  }
-
-  if (toRemove.length > 0) {
-    const facilitatorRemoved = toRemove.includes(room.facilitatorId)
-    room.participants = room.participants.filter((p) => !toRemove.includes(p.id))
-    if (facilitatorRemoved || room.participants.length === 0) {
-      rooms.delete(code.toUpperCase())
-    }
-  }
-}
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -104,42 +51,14 @@ export function createRoom(facilitatorName?: string): { room: Room; facilitatorI
     createdAt: Date.now(),
   }
   rooms.set(code, room)
-  updateLastSeen(code, facilitatorId)
   return { room, facilitatorId }
 }
 
 /**
- * Get a room by code. Prunes stale participants before returning.
+ * Get a room by code.
  */
 export function getRoom(code: string): Room | undefined {
-  pruneStaleParticipants(code)
   return rooms.get(code.toUpperCase())
-}
-
-/**
- * Record heartbeat for a participant. Call when participant is active.
- */
-export function recordHeartbeat(code: string, participantId: string): void {
-  const room = rooms.get(code.toUpperCase())
-  if (!room) return
-  if (!room.participants.some((p) => p.id === participantId)) return
-  updateLastSeen(code, participantId)
-}
-
-/**
- * Remove a participant from a room (e.g. on browser close).
- */
-export function leaveRoom(code: string, participantId: string): void {
-  const room = rooms.get(code.toUpperCase())
-  if (!room) return
-
-  lastSeen.delete(lastSeenKey(code, participantId))
-  const facilitatorRemoved = room.facilitatorId === participantId
-  room.participants = room.participants.filter((p) => p.id !== participantId)
-
-  if (facilitatorRemoved || room.participants.length === 0) {
-    rooms.delete(code.toUpperCase())
-  }
 }
 
 /**
@@ -161,7 +80,6 @@ export function joinRoom(
     hasVoted: false,
   }
   room.participants.push(participant)
-  updateLastSeen(code, participantId)
   return { room, participantId }
 }
 
@@ -184,7 +102,6 @@ export function submitVote(
 
   participant.vote = vote
   participant.hasVoted = true
-  updateLastSeen(code, participantId)
 
   if (allVotersHaveSubmitted(room)) {
     room.revealed = true
@@ -201,7 +118,6 @@ export function revealVotes(code: string, facilitatorId: string): Room | { error
   if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can reveal" }
 
   room.revealed = true
-  updateLastSeen(code, facilitatorId)
   return room
 }
 
@@ -214,7 +130,6 @@ export function nextIssue(code: string, facilitatorId: string): Room | { error: 
   if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can start next round" }
 
   room.revealed = false
-  updateLastSeen(code, facilitatorId)
   for (const p of room.participants) {
     p.hasVoted = false
     p.vote = undefined
