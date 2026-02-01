@@ -72,7 +72,7 @@ export function ShareRoomDialog({ roomCode, open, onOpenChange }: Props) {
                 className="shrink-0"
               >
                 {copied ? (
-                  <Check className="size-4 text-green-600" />
+                  <Check className="size-4 text-emerald-400" />
                 ) : (
                   <Copy className="size-4" />
                 )}

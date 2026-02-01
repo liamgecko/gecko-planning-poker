@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Planning Poker",
   description: "Sprint estimation for engineering teams",
+  icons: {
+    icon: "/gecko-poker.svg",
+  },
 };
 
 export default function RootLayout({

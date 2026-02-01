@@ -45,7 +45,7 @@ export function PlayerCard({ participant, revealed, isCurrentUser }: Props) {
     <Card
       className={cn(
         "w-full h-full min-w-0 py-0 flex flex-col items-center justify-center transition-all",
-        isCurrentUser && "ring-2 ring-primary"
+        isCurrentUser && "ring-2 ring-cyan-200 shadow-xl shadow-cyan-200/50"
       )}
     >
       <CardContent className="flex flex-col items-center justify-center p-2 w-full h-full">

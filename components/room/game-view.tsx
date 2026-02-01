@@ -80,11 +80,15 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
         <div className="flex items-center gap-4">
           <Link
             href="/"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            Planning Poker
+            <img
+              src="/gecko-poker.svg"
+              alt="Planning Poker"
+              className="h-6 w-auto"
+            />
           </Link>
-          <span className="text-sm font-mono text-muted-foreground">
+          <span className="text-xs font-mono text-muted-foreground">
             Room {room.code}
           </span>
         </div>
@@ -105,9 +109,9 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
                     aria-label="Copy room URL"
                   >
                     {urlCopied ? (
-                      <Check className="size-5 text-green-600" />
+                      <Check className="size-4 text-emerald-400" />
                     ) : (
-                      <Share2 className="size-5" />
+                      <Share2 className="size-4" />
                     )}
                   </Button>
                 </TooltipTrigger>
