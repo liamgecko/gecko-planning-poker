@@ -1,12 +1,23 @@
 "use client"
 
 import { useEffect } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { DoorOpen } from "lucide-react"
 import {
   useRoom,
   getStoredParticipantId,
   clearStoredParticipantId,
 } from "@/features/poker/use-room"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+  EmptyMedia,
+} from "@/components/ui/empty"
 import { JoinForm } from "./join-form"
 import { GameView } from "./game-view"
 
@@ -38,17 +49,24 @@ export function RoomView({ code, participantId, showShareDialog }: Props) {
 
   if (error || !room) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
-        <h1 className="text-xl font-semibold">Room not found</h1>
-        <p className="text-muted-foreground">
-          {error ?? "This room may have been closed."}
-        </p>
-        <a
-          href="/"
-          className="text-primary underline underline-offset-4 hover:no-underline"
-        >
-          Create a new room
-        </a>
+      <div className="flex min-h-screen flex-col items-center justify-center px-4">
+        <Empty className="border-0">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <DoorOpen />
+            </EmptyMedia>
+            <EmptyTitle>Room not found</EmptyTitle>
+            <EmptyDescription>
+              We couldn&apos;t find that room. Try creating a new one to get
+              started.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button asChild variant="default">
+              <Link href="/">Create new</Link>
+            </Button>
+          </EmptyContent>
+        </Empty>
       </div>
     )
   }
