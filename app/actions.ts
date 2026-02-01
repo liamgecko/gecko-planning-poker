@@ -23,7 +23,7 @@ export async function createRoom(input: CreateRoomInput) {
   if (!parsed.success) {
     return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
   }
-  const { room, facilitatorId } = createRoomRepo(parsed.data.facilitatorName)
+  const { room, facilitatorId } = await createRoomRepo(parsed.data.facilitatorName)
   return { room, facilitatorId }
 }
 
@@ -32,7 +32,7 @@ export async function joinRoom(input: JoinRoomInput) {
   if (!parsed.success) {
     return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
   }
-  const result = joinRoomRepo(
+  const result = await joinRoomRepo(
     parsed.data.code,
     parsed.data.asSpectator,
     parsed.data.name
@@ -46,7 +46,7 @@ export async function submitVote(input: SubmitVoteInput) {
   if (!parsed.success) {
     return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
   }
-  const result = submitVoteRepo(
+  const result = await submitVoteRepo(
     parsed.data.code,
     parsed.data.participantId,
     parsed.data.vote
@@ -56,25 +56,25 @@ export async function submitVote(input: SubmitVoteInput) {
 }
 
 export async function revealVotes(code: string, facilitatorId: string) {
-  const result = revealVotesRepo(code, facilitatorId)
+  const result = await revealVotesRepo(code, facilitatorId)
   if ("error" in result) return { error: result.error }
   return { room: result }
 }
 
 export async function nextIssue(code: string, facilitatorId: string) {
-  const result = nextIssueRepo(code, facilitatorId)
+  const result = await nextIssueRepo(code, facilitatorId)
   if ("error" in result) return { error: result.error }
   return { room: result }
 }
 
 export async function getRoomState(code: string) {
-  const room = getRoom(code)
+  const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
   return { room }
 }
 
 export async function endPlanning(code: string, facilitatorId: string) {
-  const result = endRoomRepo(code, facilitatorId)
+  const result = await endRoomRepo(code, facilitatorId)
   if ("error" in result) return { error: result.error }
   return { success: true }
 }

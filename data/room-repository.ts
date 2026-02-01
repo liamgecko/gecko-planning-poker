@@ -1,8 +1,30 @@
+import { redis } from "@/lib/redis"
 import type { Participant, Room, Vote } from "@/features/poker/schema"
 
+const ROOM_KEY_PREFIX = "room:"
+const CODES_KEY = "room:codes"
+
+function roomKey(code: string): string {
+  return `${ROOM_KEY_PREFIX}${code.toUpperCase()}`
+}
+
+function generateCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  let code = ""
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return code
+}
+
+function generateId(): string {
+  return crypto.randomUUID()
+}
+
+/** In-memory fallback for local dev when Redis is not configured */
 const GLOBAL_ROOMS_KEY = "__planning_poker_rooms__"
 
-function getRooms(): Map<string, Room> {
+function getInMemoryRooms(): Map<string, Room> {
   if (typeof globalThis !== "undefined") {
     const existing = (globalThis as unknown as Record<string, Map<string, Room> | undefined>)[
       GLOBAL_ROOMS_KEY
@@ -15,28 +37,33 @@ function getRooms(): Map<string, Room> {
   return new Map<string, Room>()
 }
 
-const rooms = getRooms()
+const inMemoryRooms = getInMemoryRooms()
 
-function generateCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-  let code = ""
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
-  }
-  if (rooms.has(code)) return generateCode()
-  return code
-}
-
-function generateId(): string {
-  return crypto.randomUUID()
+function useRedis(): boolean {
+  return redis !== null
 }
 
 /**
  * Create a new room. Returns the room and facilitator participant.
  */
-export function createRoom(facilitatorName?: string): { room: Room; facilitatorId: string } {
+export async function createRoom(
+  facilitatorName?: string
+): Promise<{ room: Room; facilitatorId: string }> {
   const facilitatorId = generateId()
-  const code = generateCode()
+  let code = generateCode()
+
+  if (useRedis()) {
+    while (true) {
+      const existing = await redis!.get(roomKey(code))
+      if (!existing) break
+      code = generateCode()
+    }
+  } else {
+    while (inMemoryRooms.has(code)) {
+      code = generateCode()
+    }
+  }
+
   const facilitator: Participant = {
     id: facilitatorId,
     name: facilitatorName,
@@ -50,26 +77,41 @@ export function createRoom(facilitatorName?: string): { room: Room; facilitatorI
     revealed: false,
     createdAt: Date.now(),
   }
-  rooms.set(code, room)
+
+  if (useRedis()) {
+    await redis!.set(roomKey(code), JSON.stringify(room))
+    await redis!.sadd(CODES_KEY, code)
+  } else {
+    inMemoryRooms.set(code, room)
+  }
+
   return { room, facilitatorId }
 }
 
 /**
  * Get a room by code.
  */
-export function getRoom(code: string): Room | undefined {
-  return rooms.get(code.toUpperCase())
+export async function getRoom(code: string): Promise<Room | undefined> {
+  const key = code.toUpperCase()
+
+  if (useRedis()) {
+    const data = await redis!.get<string>(roomKey(key))
+    if (!data) return undefined
+    return typeof data === "string" ? (JSON.parse(data) as Room) : data
+  }
+
+  return inMemoryRooms.get(key)
 }
 
 /**
  * Join a room as voter or spectator.
  */
-export function joinRoom(
+export async function joinRoom(
   code: string,
   asSpectator: boolean,
   name?: string
-): { room: Room; participantId: string } | { error: string } {
-  const room = rooms.get(code.toUpperCase())
+): Promise<{ room: Room; participantId: string } | { error: string }> {
+  const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
 
   const participantId = generateId()
@@ -80,18 +122,23 @@ export function joinRoom(
     hasVoted: false,
   }
   room.participants.push(participant)
+
+  if (useRedis()) {
+    await redis!.set(roomKey(code.toUpperCase()), JSON.stringify(room))
+  }
+
   return { room, participantId }
 }
 
 /**
  * Submit or update a vote.
  */
-export function submitVote(
+export async function submitVote(
   code: string,
   participantId: string,
   vote: Vote
-): Room | { error: string } {
-  const room = rooms.get(code.toUpperCase())
+): Promise<Room | { error: string }> {
+  const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
   if (room.revealed) return { error: "Votes already revealed" }
 
@@ -106,26 +153,42 @@ export function submitVote(
   if (allVotersHaveSubmitted(room)) {
     room.revealed = true
   }
+
+  if (useRedis()) {
+    await redis!.set(roomKey(code.toUpperCase()), JSON.stringify(room))
+  }
+
   return room
 }
 
 /**
  * Reveal votes (facilitator only).
  */
-export function revealVotes(code: string, facilitatorId: string): Room | { error: string } {
-  const room = rooms.get(code.toUpperCase())
+export async function revealVotes(
+  code: string,
+  facilitatorId: string
+): Promise<Room | { error: string }> {
+  const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
   if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can reveal" }
 
   room.revealed = true
+
+  if (useRedis()) {
+    await redis!.set(roomKey(code.toUpperCase()), JSON.stringify(room))
+  }
+
   return room
 }
 
 /**
  * Start next round (facilitator only).
  */
-export function nextIssue(code: string, facilitatorId: string): Room | { error: string } {
-  const room = rooms.get(code.toUpperCase())
+export async function nextIssue(
+  code: string,
+  facilitatorId: string
+): Promise<Room | { error: string }> {
+  const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
   if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can start next round" }
 
@@ -134,18 +197,34 @@ export function nextIssue(code: string, facilitatorId: string): Room | { error: 
     p.hasVoted = false
     p.vote = undefined
   }
+
+  if (useRedis()) {
+    await redis!.set(roomKey(code.toUpperCase()), JSON.stringify(room))
+  }
+
   return room
 }
 
 /**
  * End planning session (facilitator only). Removes the room.
  */
-export function endRoom(code: string, facilitatorId: string): { success: true } | { error: string } {
-  const room = rooms.get(code.toUpperCase())
+export async function endRoom(
+  code: string,
+  facilitatorId: string
+): Promise<{ success: true } | { error: string }> {
+  const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
   if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can end planning" }
 
-  rooms.delete(code.toUpperCase())
+  const key = code.toUpperCase()
+
+  if (useRedis()) {
+    await redis!.del(roomKey(key))
+    await redis!.srem(CODES_KEY, key)
+  } else {
+    inMemoryRooms.delete(key)
+  }
+
   return { success: true }
 }
 

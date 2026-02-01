@@ -33,4 +33,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Important:** For room persistence on Vercel, add [Upstash Redis](https://vercel.com/marketplace/upstash) from the Vercel Marketplace:
+
+1. In your Vercel project, go to **Storage** → **Create Database**
+2. Select **Upstash Redis** and provision
+3. Link the database to your project (env vars are auto-injected)
+
+Without Redis, rooms are stored in-memory and will not persist across serverless invocations.
