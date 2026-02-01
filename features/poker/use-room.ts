@@ -28,11 +28,15 @@ export function useRoom(code: string) {
 
   const fetchRoom = useCallback(async () => {
     try {
-      const res = await fetch(`/api/room/${code}`)
+      const res = await fetch(`/api/room/${encodeURIComponent(code)}`)
       if (!res.ok) {
+        setRoom(null)
         if (res.status === 404) {
           setError("Room not found")
-          setRoom(null)
+        } else if (res.status === 400) {
+          setError("Invalid room code")
+        } else {
+          setError("Failed to load room")
         }
         return
       }

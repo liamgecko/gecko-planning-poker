@@ -51,6 +51,7 @@ export function JoinForm({ code }: Props) {
         <Input
           id="name"
           placeholder="e.g. Developer"
+          maxLength={100}
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={loading}

@@ -70,6 +70,7 @@ export function VoteInput({
         <Input
           type="number"
           min={0}
+          max={999}
           placeholder="0"
           value={value}
           onChange={(e) => setValue(e.target.value)}

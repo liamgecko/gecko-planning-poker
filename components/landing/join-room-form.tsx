@@ -29,9 +29,10 @@ export function JoinRoomForm() {
         <Input
           id="code"
           placeholder="e.g. ABC123"
+          maxLength={10}
           value={code}
           onChange={(e) => {
-            setCode(e.target.value.toUpperCase())
+            setCode(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())
             setError(null)
           }}
           className="font-mono"

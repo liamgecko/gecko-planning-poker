@@ -2,6 +2,7 @@
 
 import {
   createRoomSchema,
+  facilitatorActionSchema,
   joinRoomSchema,
   submitVoteSchema,
   type CreateRoomInput,
@@ -56,25 +57,41 @@ export async function submitVote(input: SubmitVoteInput) {
 }
 
 export async function revealVotes(code: string, facilitatorId: string) {
-  const result = await revealVotesRepo(code, facilitatorId)
+  const parsed = facilitatorActionSchema.safeParse({ code, facilitatorId })
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
+  }
+  const result = await revealVotesRepo(parsed.data.code, parsed.data.facilitatorId)
   if ("error" in result) return { error: result.error }
   return { room: result }
 }
 
 export async function nextIssue(code: string, facilitatorId: string) {
-  const result = await nextIssueRepo(code, facilitatorId)
+  const parsed = facilitatorActionSchema.safeParse({ code, facilitatorId })
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
+  }
+  const result = await nextIssueRepo(parsed.data.code, parsed.data.facilitatorId)
   if ("error" in result) return { error: result.error }
   return { room: result }
 }
 
 export async function getRoomState(code: string) {
-  const room = await getRoom(code)
+  const parsed = facilitatorActionSchema.shape.code.safeParse(code.trim())
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().formErrors[0] ?? "Invalid room code" }
+  }
+  const room = await getRoom(parsed.data)
   if (!room) return { error: "Room not found" }
   return { room }
 }
 
 export async function endPlanning(code: string, facilitatorId: string) {
-  const result = await endRoomRepo(code, facilitatorId)
+  const parsed = facilitatorActionSchema.safeParse({ code, facilitatorId })
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
+  }
+  const result = await endRoomRepo(parsed.data.code, parsed.data.facilitatorId)
   if ("error" in result) return { error: result.error }
   return { success: true }
 }
