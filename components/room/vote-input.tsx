@@ -56,7 +56,7 @@ export function VoteInput({
         ? Math.max(0.5, Math.round(numValue * 4) / 4)
         : NaN
   const isWithinLimit =
-    unit === "weeks" ? roundedValue <= 2 : roundedValue <= 10
+    unit === "weeks" ? roundedValue <= 2.9 : roundedValue <= 20
   const isValid =
     !isNaN(roundedValue) &&
     (unit === "weeks" ? roundedValue >= 1 : roundedValue >= 0.5)
@@ -100,8 +100,8 @@ export function VoteInput({
     e?.preventDefault()
     if (revealed) return
     const isOverLimit =
-      (unit === "days" && roundedValue > 10) ||
-      (unit === "weeks" && roundedValue > 2)
+      (unit === "days" && roundedValue > 20) ||
+      (unit === "weeks" && roundedValue > 2.9)
     if (isOverLimit) {
       playEasterEggSound()
       toast("Product says NO!", {

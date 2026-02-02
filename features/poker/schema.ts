@@ -31,8 +31,8 @@ export const voteSchema = z
     (v) =>
       v.unit === "weeks"
         ? Number.isInteger(v.value) && v.value >= 1 && v.value <= 2
-        : v.value >= 0.5 && v.value <= 10,
-    { message: "Days max 10, weeks max 2" }
+        : v.value >= 0.5 && v.value <= 20,
+    { message: "Days max 20, weeks max 2" }
   )
 export type Vote = z.infer<typeof voteSchema>
 
