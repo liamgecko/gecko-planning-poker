@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Check, LogOut, Share2, Users } from "lucide-react"
+import { CircleCheckBig, LogOut, Share2, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -136,12 +136,12 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="icon"
+                    size="icon-sm"
                     onClick={handleCopyUrl}
                     aria-label="Copy room URL"
                   >
                     {urlCopied ? (
-                      <Check className="size-4 text-emerald-400" />
+                      <CircleCheckBig className="size-4 text-emerald-400" />
                     ) : (
                       <Share2 className="size-4" />
                     )}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Eye, ArrowBigRightDash } from "lucide-react"
+import { Eye, ArrowBigRightDash, CircleCheckBig } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { revealVotes, nextIssue, updateIssueName } from "@/app/actions"
 
 type Props = {
@@ -22,6 +27,71 @@ type Props = {
   allowIssueNames?: boolean
   currentIssueName?: string
   onAction?: () => void
+}
+
+function IssueNameInput({
+  code,
+  facilitatorId,
+  currentIssueName,
+  onAction,
+}: {
+  code: string
+  facilitatorId: string
+  currentIssueName?: string
+  onAction?: () => void
+}) {
+  const [issueNameValue, setIssueNameValue] = useState(currentIssueName ?? "")
+  const [updatingIssue, setUpdatingIssue] = useState(false)
+  const [issueNameSaved, setIssueNameSaved] = useState(false)
+  const issueNameInputRef = useRef<HTMLInputElement>(null)
+
+  const hasIssueNameEdit =
+    issueNameValue.trim() !== (currentIssueName ?? "")
+
+  async function handleUpdateIssueName() {
+    if (!hasIssueNameEdit) return
+    const trimmed = issueNameValue.trim()
+    setUpdatingIssue(true)
+    await updateIssueName(code, facilitatorId, trimmed || undefined)
+    setUpdatingIssue(false)
+    setIssueNameSaved(true)
+    setTimeout(() => setIssueNameSaved(false), 2000)
+    onAction?.()
+  }
+
+  return (
+    <div className="flex flex-col gap-2 w-full max-w-xs">
+      <Label htmlFor="issueName">Current issue</Label>
+      <div className="flex items-center gap-1">
+        <Input
+          ref={issueNameInputRef}
+          id="issueName"
+          placeholder="e.g. API integration"
+          maxLength={100}
+          value={issueNameValue}
+          onChange={(e) => setIssueNameValue(e.target.value)}
+          onBlur={handleUpdateIssueName}
+          onKeyDown={(e) =>
+            e.key === "Enter" && (e.preventDefault(), handleUpdateIssueName())
+          }
+          className="font-medium"
+        />
+        <Tooltip open={issueNameSaved}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={handleUpdateIssueName}
+              disabled={!hasIssueNameEdit || updatingIssue}
+              aria-label="Update issue name"
+            >
+              <CircleCheckBig className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Issue name saved!</TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  )
 }
 
 export function FacilitatorBar({
@@ -35,7 +105,6 @@ export function FacilitatorBar({
   const [nextIssueDialogOpen, setNextIssueDialogOpen] = useState(false)
   const [nextIssueName, setNextIssueName] = useState("")
   const [loading, setLoading] = useState(false)
-  const issueNameInputRef = useRef<HTMLInputElement>(null)
 
   async function handleReveal() {
     await revealVotes(code, facilitatorId)
@@ -64,32 +133,17 @@ export function FacilitatorBar({
     onAction?.()
   }
 
-  async function handleIssueNameBlur() {
-    if (!allowIssueNames) return
-    const value = issueNameInputRef.current?.value ?? ""
-    const trimmed = value.trim()
-    if (trimmed === (currentIssueName ?? "")) return
-    await updateIssueName(code, facilitatorId, trimmed || undefined)
-    onAction?.()
-  }
-
   return (
     <>
       <div className="flex flex-col items-center gap-4">
         {allowIssueNames && (
-          <div className="flex flex-col gap-2 w-full max-w-xs">
-            <Label htmlFor="issueName">Current issue</Label>
-            <Input
-              ref={issueNameInputRef}
-              key={currentIssueName ?? "empty"}
-              id="issueName"
-              placeholder="e.g. API integration"
-              maxLength={100}
-              defaultValue={currentIssueName ?? ""}
-              onBlur={handleIssueNameBlur}
-              className="font-medium"
-            />
-          </div>
+          <IssueNameInput
+            key={code}
+            code={code}
+            facilitatorId={facilitatorId}
+            currentIssueName={currentIssueName}
+            onAction={onAction}
+          />
         )}
         <div className="flex items-center gap-3">
           {!revealed && (

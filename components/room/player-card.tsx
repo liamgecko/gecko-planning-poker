@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, HatGlasses, HelpCircle, ShieldUser } from "lucide-react"
+import { CircleCheckBig, HatGlasses, HelpCircle, ShieldUser } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -54,7 +54,7 @@ export function PlayerCard({ participant, revealed, isCurrentUser }: Props) {
             {voteLabel}
           </span>
         ) : showSubmitted ? (
-          <Check className="size-6 text-muted-foreground" aria-label="Submitted" />
+          <CircleCheckBig className="size-6 text-muted-foreground" aria-label="Submitted" />
         ) : participant.role === "spectator" ? (
           <HatGlasses className="size-6 text-muted-foreground" aria-label="Spectator" />
         ) : participant.role === "facilitator" ? (

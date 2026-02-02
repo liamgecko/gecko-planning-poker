@@ -74,9 +74,9 @@ export function JoinForm({ code, voterCount = 0, voterLimit = 7 }: Props) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="voter" disabled={voterSlotsFull}>
-              Voter (can vote)
+              Voter
             </SelectItem>
-            <SelectItem value="spectator">Spectator (watch only)</SelectItem>
+            <SelectItem value="spectator">Spectator</SelectItem>
           </SelectContent>
         </Select>
       </div>

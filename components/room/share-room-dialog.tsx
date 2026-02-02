@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Copy, Check } from "lucide-react"
+import { Copy, CircleCheckBig } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -75,7 +75,7 @@ export function ShareRoomDialog({ roomCode, roomName, open, onOpenChange }: Prop
                 className="shrink-0"
               >
                 {copied ? (
-                  <Check className="size-4 text-emerald-400" />
+                  <CircleCheckBig className="size-4 text-emerald-400" />
                 ) : (
                   <Copy className="size-4" />
                 )}
