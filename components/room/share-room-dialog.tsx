@@ -20,11 +20,12 @@ import { Input } from "@/components/ui/input"
 
 type Props = {
   roomCode: string
+  roomName?: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function ShareRoomDialog({ roomCode, open, onOpenChange }: Props) {
+export function ShareRoomDialog({ roomCode, roomName, open, onOpenChange }: Props) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
   const roomUrl =
@@ -51,7 +52,9 @@ export function ShareRoomDialog({ roomCode, open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Share room URL</DialogTitle>
+          <DialogTitle>
+            Share {roomName ?? `Room ${roomCode}`}
+          </DialogTitle>
           <DialogDescription>
             Share this URL with your team so they can join the planning session.
           </DialogDescription>

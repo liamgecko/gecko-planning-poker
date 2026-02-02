@@ -5,6 +5,7 @@ import {
   facilitatorActionSchema,
   joinRoomSchema,
   submitVoteSchema,
+  updateIssueNameSchema,
   type CreateRoomInput,
   type JoinRoomInput,
   type SubmitVoteInput,
@@ -17,6 +18,7 @@ import {
   nextIssue as nextIssueRepo,
   revealVotes as revealVotesRepo,
   submitVote as submitVoteRepo,
+  updateIssueName as updateIssueNameRepo,
 } from "@/data/room-repository"
 
 export async function createRoom(input: CreateRoomInput) {
@@ -24,7 +26,11 @@ export async function createRoom(input: CreateRoomInput) {
   if (!parsed.success) {
     return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
   }
-  const { room, facilitatorId } = await createRoomRepo(parsed.data.facilitatorName)
+  const { room, facilitatorId } = await createRoomRepo(
+    parsed.data.facilitatorName,
+    parsed.data.roomName,
+    parsed.data.allowIssueNames
+  )
   return { room, facilitatorId }
 }
 
@@ -66,12 +72,42 @@ export async function revealVotes(code: string, facilitatorId: string) {
   return { room: result }
 }
 
-export async function nextIssue(code: string, facilitatorId: string) {
+export async function nextIssue(
+  code: string,
+  facilitatorId: string,
+  issueName?: string
+) {
   const parsed = facilitatorActionSchema.safeParse({ code, facilitatorId })
   if (!parsed.success) {
     return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
   }
-  const result = await nextIssueRepo(parsed.data.code, parsed.data.facilitatorId)
+  const result = await nextIssueRepo(
+    parsed.data.code,
+    parsed.data.facilitatorId,
+    issueName
+  )
+  if ("error" in result) return { error: result.error }
+  return { room: result }
+}
+
+export async function updateIssueName(
+  code: string,
+  facilitatorId: string,
+  issueName?: string
+) {
+  const parsed = updateIssueNameSchema.safeParse({
+    code,
+    facilitatorId,
+    issueName,
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
+  }
+  const result = await updateIssueNameRepo(
+    parsed.data.code,
+    parsed.data.facilitatorId,
+    parsed.data.issueName
+  )
   if ("error" in result) return { error: result.error }
   return { room: result }
 }

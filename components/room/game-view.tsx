@@ -77,6 +77,7 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
     <div className="min-h-screen flex flex-col">
       <ShareRoomDialog
         roomCode={room.code}
+        roomName={room.name}
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
       />
@@ -165,6 +166,18 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-8">
+        {(room.name || room.currentIssueName) && (
+          <div className="mb-8 text-center">
+            {room.name && (
+              <h2 className="text-xl font-semibold">{room.name}</h2>
+            )}
+            {room.currentIssueName && (
+              <p className="mt-1 text-muted-foreground">
+                {room.currentIssueName}
+              </p>
+            )}
+          </div>
+        )}
         <TableLayout>
           {tableParticipants.map((p) => (
             <PlayerCard
@@ -195,6 +208,8 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
               code={room.code}
               facilitatorId={participantId}
               revealed={room.revealed}
+              allowIssueNames={room.allowIssueNames}
+              currentIssueName={room.currentIssueName}
               onAction={refetch}
             />
           </div>

@@ -15,15 +15,25 @@ export const participantIdSchema = z.string().uuid("Invalid participant ID")
 export const unitSchema = z.enum(["days", "weeks"])
 export type Unit = z.infer<typeof unitSchema>
 
-/** A vote: number + unit (max 999, up to 2 decimal places) */
-export const voteSchema = z.object({
-  value: z
-    .number()
-    .nonnegative()
-    .max(999, "Value must be 999 or less")
-    .transform((n) => Math.round(n * 100) / 100),
-  unit: unitSchema.default("days"),
-})
+/** A vote: number + unit. Days: min 0.5, step 0.25. Weeks: min 1, step 1. */
+export const voteSchema = z
+  .object({
+    value: z.number().max(999, "Value must be 999 or less"),
+    unit: unitSchema.default("days"),
+  })
+  .transform((v) => {
+    if (v.unit === "weeks") {
+      return { ...v, value: Math.max(1, Math.round(v.value)) }
+    }
+    return { ...v, value: Math.max(0.5, Math.round(v.value * 4) / 4) }
+  })
+  .refine(
+    (v) =>
+      v.unit === "weeks"
+        ? Number.isInteger(v.value) && v.value >= 1
+        : v.value >= 0.5,
+    { message: "Invalid value for unit" }
+  )
 export type Vote = z.infer<typeof voteSchema>
 
 /** Participant role */
@@ -43,6 +53,9 @@ export type Participant = z.infer<typeof participantSchema>
 /** Room state */
 export const roomSchema = z.object({
   code: z.string(),
+  name: z.string().max(100).optional(),
+  allowIssueNames: z.boolean().default(false),
+  currentIssueName: z.string().max(100).optional(),
   facilitatorId: z.string(),
   participants: z.array(participantSchema),
   revealed: z.boolean().default(false),
@@ -52,7 +65,9 @@ export type Room = z.infer<typeof roomSchema>
 
 /** Create room input */
 export const createRoomSchema = z.object({
+  roomName: z.string().max(100).optional(),
   facilitatorName: z.string().max(100).optional(),
+  allowIssueNames: z.boolean().default(false),
 })
 export type CreateRoomInput = z.infer<typeof createRoomSchema>
 
@@ -68,6 +83,11 @@ export type JoinRoomInput = z.infer<typeof joinRoomSchema>
 export const facilitatorActionSchema = z.object({
   code: roomCodeSchema,
   facilitatorId: participantIdSchema,
+})
+
+/** Update issue name input */
+export const updateIssueNameSchema = facilitatorActionSchema.extend({
+  issueName: z.string().max(100).optional(),
 })
 
 /** Submit vote input */

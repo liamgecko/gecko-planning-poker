@@ -52,7 +52,7 @@ export function JoinForm({ code, voterCount = 0, voterLimit = 7 }: Props) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Your name (optional)</Label>
+        <Label htmlFor="name">Your name</Label>
         <Input
           id="name"
           placeholder="e.g. Developer"

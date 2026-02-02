@@ -30,30 +30,56 @@ export function VoteInput({
   hasVoted,
   revealed,
 }: Props) {
+  const defaultForUnit = (u: Unit) => (u === "weeks" ? "1" : "0.5")
   const [value, setValue] = useState(
-    currentVote?.value?.toString() ?? ""
+    currentVote?.value?.toString() ?? defaultForUnit(currentVote?.unit ?? "days")
   )
   const [unit, setUnit] = useState<Unit>(currentVote?.unit ?? "days")
 
   useEffect(() => {
-    setValue(currentVote?.value?.toString() ?? "")
-    setUnit(currentVote?.unit ?? "days")
+    const u = currentVote?.unit ?? "days"
+    setValue(currentVote?.value?.toString() ?? defaultForUnit(u))
+    setUnit(u)
   }, [currentVote?.value, currentVote?.unit])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const numValue = parseFloat(value)
-  const roundedValue = !isNaN(numValue) ? Math.round(numValue * 100) / 100 : NaN
-  const isValid = !isNaN(roundedValue) && roundedValue >= 0
+  const roundedValue =
+    unit === "weeks"
+      ? !isNaN(numValue)
+        ? Math.max(1, Math.round(numValue))
+        : NaN
+      : !isNaN(numValue)
+        ? Math.max(0.5, Math.round(numValue * 4) / 4)
+        : NaN
+  const isValid =
+    !isNaN(roundedValue) &&
+    (unit === "weeks" ? roundedValue >= 1 : roundedValue >= 0.5)
 
   function handleValueChange(raw: string) {
     if (raw === "") {
       setValue("")
       return
     }
+    if (unit === "weeks") {
+      if (!/^\d+$/.test(raw)) return
+      setValue(raw)
+      return
+    }
     const parts = raw.split(".")
     if (parts.length === 2 && parts[1].length > 2) return
     setValue(raw)
+  }
+
+  function handleUnitChange(newUnit: Unit) {
+    setUnit(newUnit)
+    const num = parseFloat(value)
+    if (newUnit === "weeks") {
+      if (isNaN(num) || num < 1) setValue("1")
+    } else {
+      if (isNaN(num) || num < 0.5) setValue("0.5")
+    }
   }
 
   async function handleSubmit(e?: React.FormEvent) {
@@ -80,10 +106,10 @@ export function VoteInput({
       <div className="flex items-center gap-2">
         <Input
           type="number"
-          min={0}
+          min={unit === "weeks" ? 1 : 0.5}
           max={999}
-          step="0.01"
-          placeholder="0"
+          step={unit === "weeks" ? 1 : 0.25}
+          placeholder={unit === "weeks" ? "1" : "0.5"}
           value={value}
           onChange={(e) => handleValueChange(e.target.value)}
           disabled={loading}
@@ -91,7 +117,7 @@ export function VoteInput({
         />
         <Select
           value={unit}
-          onValueChange={(v) => setUnit(v as Unit)}
+          onValueChange={(v) => handleUnitChange(v as Unit)}
           disabled={loading}
         >
           <SelectTrigger className="w-28">

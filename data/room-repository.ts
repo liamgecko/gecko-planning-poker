@@ -48,7 +48,9 @@ function useRedis(): boolean {
  * Create a new room. Returns the room and facilitator participant.
  */
 export async function createRoom(
-  facilitatorName?: string
+  facilitatorName?: string,
+  roomName?: string,
+  allowIssueNames?: boolean
 ): Promise<{ room: Room; facilitatorId: string }> {
   const facilitatorId = generateId()
   let code = generateCode()
@@ -73,6 +75,8 @@ export async function createRoom(
   }
   const room: Room = {
     code,
+    name: roomName,
+    allowIssueNames: allowIssueNames ?? false,
     facilitatorId,
     participants: [facilitator],
     revealed: false,
@@ -195,17 +199,43 @@ export async function revealVotes(
  */
 export async function nextIssue(
   code: string,
-  facilitatorId: string
+  facilitatorId: string,
+  issueName?: string
 ): Promise<Room | { error: string }> {
   const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
   if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can start next round" }
 
   room.revealed = false
+  if (room.allowIssueNames && issueName !== undefined) {
+    room.currentIssueName = issueName.trim() || undefined
+  }
   for (const p of room.participants) {
     p.hasVoted = false
     p.vote = undefined
   }
+
+  if (useRedis()) {
+    await redis!.set(roomKey(code.toUpperCase()), JSON.stringify(room))
+  }
+
+  return room
+}
+
+/**
+ * Update current issue name (facilitator only).
+ */
+export async function updateIssueName(
+  code: string,
+  facilitatorId: string,
+  issueName?: string
+): Promise<Room | { error: string }> {
+  const room = await getRoom(code)
+  if (!room) return { error: "Room not found" }
+  if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can update issue name" }
+  if (!room.allowIssueNames) return { error: "Issue naming is not enabled for this room" }
+
+  room.currentIssueName = issueName?.trim() || undefined
 
   if (useRedis()) {
     await redis!.set(roomKey(code.toUpperCase()), JSON.stringify(room))
