@@ -90,7 +90,13 @@ export function RoomView({ code, participantId, showShareDialog }: Props) {
             </p>
           </div>
           <div className="rounded-lg border bg-card p-6 shadow-sm">
-            <JoinForm code={room.code} />
+            <JoinForm
+              code={room.code}
+              voterCount={
+                room.participants.filter((p) => p.role === "voter").length
+              }
+              voterLimit={7}
+            />
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import type { Participant, Room, Vote } from "@/features/poker/schema"
 
 const ROOM_KEY_PREFIX = "room:"
 const CODES_KEY = "room:codes"
+const MAX_VOTERS = 7
 
 function roomKey(code: string): string {
   return `${ROOM_KEY_PREFIX}${code.toUpperCase()}`
@@ -105,6 +106,7 @@ export async function getRoom(code: string): Promise<Room | undefined> {
 
 /**
  * Join a room as voter or spectator.
+ * Max 1 facilitator, 7 voters. Spectators unlimited.
  */
 export async function joinRoom(
   code: string,
@@ -113,6 +115,13 @@ export async function joinRoom(
 ): Promise<{ room: Room; participantId: string } | { error: string }> {
   const room = await getRoom(code)
   if (!room) return { error: "Room not found" }
+
+  if (!asSpectator) {
+    const voterCount = room.participants.filter((p) => p.role === "voter").length
+    if (voterCount >= MAX_VOTERS) {
+      return { error: "Room is full. Join as a spectator to watch." }
+    }
+  }
 
   const participantId = generateId()
   const participant: Participant = {

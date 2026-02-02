@@ -17,17 +17,22 @@ import { joinRoom } from "@/app/actions"
 
 type Props = {
   code: string
+  voterCount?: number
+  voterLimit?: number
 }
 
-export function JoinForm({ code }: Props) {
+export function JoinForm({ code, voterCount = 0, voterLimit = 7 }: Props) {
   const router = useRouter()
   const [name, setName] = useState("")
   const [asSpectator, setAsSpectator] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const voterSlotsFull = voterCount >= voterLimit
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!asSpectator && voterSlotsFull) return
     setLoading(true)
     setError(null)
     const result = await joinRoom({
@@ -68,13 +73,23 @@ export function JoinForm({ code }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="voter">Voter (can vote)</SelectItem>
+            <SelectItem value="voter" disabled={voterSlotsFull}>
+              Voter (can vote)
+            </SelectItem>
             <SelectItem value="spectator">Spectator (watch only)</SelectItem>
           </SelectContent>
         </Select>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" disabled={loading}>
+      {voterSlotsFull && !asSpectator && (
+        <p className="text-sm text-muted-foreground">
+          Voter slots are full. Join as a spectator to watch.
+        </p>
+      )}
+      <Button
+        type="submit"
+        disabled={loading || (!asSpectator && voterSlotsFull)}
+      >
         {loading ? "Joining..." : "Join Room"}
       </Button>
     </form>

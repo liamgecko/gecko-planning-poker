@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Check, LogOut, Share2 } from "lucide-react"
+import { Check, LogOut, Share2, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -58,6 +58,10 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
 
   const participant = room.participants.find((p) => p.id === participantId)
   const canVote = participant && participant.role === "voter"
+  const tableParticipants = room.participants.filter(
+    (p) => p.role === "facilitator" || p.role === "voter"
+  )
+  const spectators = room.participants.filter((p) => p.role === "spectator")
   const roomUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/room/${room.code}`
@@ -93,6 +97,33 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {spectators.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className="flex items-center gap-1.5 rounded-full border bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground"
+                  aria-label={`${spectators.length} spectator${spectators.length === 1 ? "" : "s"}`}
+                >
+                  <Users className="size-3.5" />
+                  <span className="font-medium tabular-nums">
+                    {spectators.length}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="font-medium mb-1">
+                  Spectator{spectators.length === 1 ? "" : "s"}
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-0.5">
+                  {spectators.map((s) => (
+                    <li key={s.id}>
+                      {s.name ?? "Anonymous"}
+                    </li>
+                  ))}
+                </ul>
+              </TooltipContent>
+            </Tooltip>
+          )}
           {isFacilitator && (
             <>
               <Tooltip
@@ -135,7 +166,7 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
 
       <main className="flex-1 flex flex-col items-center justify-center p-8">
         <TableLayout>
-          {room.participants.map((p) => (
+          {tableParticipants.map((p) => (
             <PlayerCard
               key={p.id}
               participant={p}

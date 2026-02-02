@@ -42,8 +42,19 @@ export function VoteInput({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const numValue = parseInt(value, 10)
-  const isValid = !isNaN(numValue) && numValue >= 0
+  const numValue = parseFloat(value)
+  const roundedValue = !isNaN(numValue) ? Math.round(numValue * 100) / 100 : NaN
+  const isValid = !isNaN(roundedValue) && roundedValue >= 0
+
+  function handleValueChange(raw: string) {
+    if (raw === "") {
+      setValue("")
+      return
+    }
+    const parts = raw.split(".")
+    if (parts.length === 2 && parts[1].length > 2) return
+    setValue(raw)
+  }
 
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault()
@@ -53,7 +64,7 @@ export function VoteInput({
     const result = await submitVote({
       code,
       participantId,
-      vote: { value: numValue, unit },
+      vote: { value: roundedValue, unit },
     })
     setLoading(false)
     if (result.error) {
@@ -71,9 +82,10 @@ export function VoteInput({
           type="number"
           min={0}
           max={999}
+          step="0.01"
           placeholder="0"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => handleValueChange(e.target.value)}
           disabled={loading}
           className="w-24"
         />

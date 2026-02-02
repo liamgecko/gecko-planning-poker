@@ -15,9 +15,13 @@ export const participantIdSchema = z.string().uuid("Invalid participant ID")
 export const unitSchema = z.enum(["days", "weeks"])
 export type Unit = z.infer<typeof unitSchema>
 
-/** A vote: number + unit (max 999 to prevent abuse) */
+/** A vote: number + unit (max 999, up to 2 decimal places) */
 export const voteSchema = z.object({
-  value: z.number().int().nonnegative().max(999, "Value must be 999 or less"),
+  value: z
+    .number()
+    .nonnegative()
+    .max(999, "Value must be 999 or less")
+    .transform((n) => Math.round(n * 100) / 100),
   unit: unitSchema.default("days"),
 })
 export type Vote = z.infer<typeof voteSchema>
