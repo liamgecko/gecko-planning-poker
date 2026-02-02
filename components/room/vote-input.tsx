@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { OctagonAlertIcon } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -53,9 +55,12 @@ export function VoteInput({
       : !isNaN(numValue)
         ? Math.max(0.5, Math.round(numValue * 4) / 4)
         : NaN
+  const isWithinLimit =
+    unit === "weeks" ? roundedValue <= 2 : roundedValue <= 10
   const isValid =
     !isNaN(roundedValue) &&
     (unit === "weeks" ? roundedValue >= 1 : roundedValue >= 0.5)
+  const canSubmit = isValid && isWithinLimit
 
   function handleValueChange(raw: string) {
     if (raw === "") {
@@ -82,9 +87,29 @@ export function VoteInput({
     }
   }
 
+  function playEasterEggSound() {
+    if (typeof window === "undefined") return
+    try {
+      const audio = new Audio("/dj-airhorn-sound-39405.mp3")
+      audio.volume = 0.5
+      audio.play().catch(() => {})
+    } catch {}
+  }
+
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault()
-    if (!isValid || revealed) return
+    if (revealed) return
+    const isOverLimit =
+      (unit === "days" && roundedValue > 10) ||
+      (unit === "weeks" && roundedValue > 2)
+    if (isOverLimit) {
+      playEasterEggSound()
+      toast("Product says NO!", {
+        icon: <OctagonAlertIcon className="size-4 text-rose-500" />,
+      })
+      return
+    }
+    if (!canSubmit) return
     setLoading(true)
     setError(null)
     const result = await submitVote({
@@ -95,7 +120,6 @@ export function VoteInput({
     setLoading(false)
     if (result.error) {
       setError(result.error)
-      return
     }
   }
 
@@ -133,11 +157,7 @@ export function VoteInput({
         </Select>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button
-        type="submit"
-        disabled={loading || !isValid}
-        onClick={() => handleSubmit()}
-      >
+      <Button type="submit" disabled={loading || !isValid}>
         {loading ? "Submitting..." : hasVoted ? "Update vote" : "Submit vote"}
       </Button>
     </form>

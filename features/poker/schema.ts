@@ -30,9 +30,9 @@ export const voteSchema = z
   .refine(
     (v) =>
       v.unit === "weeks"
-        ? Number.isInteger(v.value) && v.value >= 1
-        : v.value >= 0.5,
-    { message: "Invalid value for unit" }
+        ? Number.isInteger(v.value) && v.value >= 1 && v.value <= 2
+        : v.value >= 0.5 && v.value <= 10,
+    { message: "Days max 10, weeks max 2" }
   )
 export type Vote = z.infer<typeof voteSchema>
 
