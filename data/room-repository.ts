@@ -223,6 +223,30 @@ export async function nextIssue(
 }
 
 /**
+ * Reset all votes (facilitator only). Clears votes and hides them.
+ */
+export async function resetVotes(
+  code: string,
+  facilitatorId: string
+): Promise<Room | { error: string }> {
+  const room = await getRoom(code)
+  if (!room) return { error: "Room not found" }
+  if (room.facilitatorId !== facilitatorId) return { error: "Only facilitator can reset votes" }
+
+  room.revealed = false
+  for (const p of room.participants) {
+    p.hasVoted = false
+    p.vote = undefined
+  }
+
+  if (useRedis()) {
+    await redis!.set(roomKey(code.toUpperCase()), JSON.stringify(room))
+  }
+
+  return room
+}
+
+/**
  * Update current issue name (facilitator only).
  */
 export async function updateIssueName(

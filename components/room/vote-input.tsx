@@ -123,8 +123,6 @@ export function VoteInput({
     }
   }
 
-  if (revealed) return null
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -136,13 +134,13 @@ export function VoteInput({
           placeholder={unit === "weeks" ? "1" : "0.5"}
           value={value}
           onChange={(e) => handleValueChange(e.target.value)}
-          disabled={loading}
+          disabled={loading || revealed}
           className="w-24"
         />
         <Select
           value={unit}
           onValueChange={(v) => handleUnitChange(v as Unit)}
-          disabled={loading}
+          disabled={loading || revealed}
         >
           <SelectTrigger className="w-28">
             <SelectValue />
@@ -157,7 +155,10 @@ export function VoteInput({
         </Select>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" disabled={loading || !isValid}>
+      <Button
+        type="submit"
+        disabled={loading || !isValid || revealed}
+      >
         {loading ? "Submitting..." : hasVoted ? "Update vote" : "Submit vote"}
       </Button>
     </form>

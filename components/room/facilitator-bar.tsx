@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Eye, ArrowBigRightDash, CircleCheckBig } from "lucide-react"
+import { Eye, ArrowBigRightDash, CircleCheckBig, Eraser } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { revealVotes, nextIssue, updateIssueName } from "@/app/actions"
+import { revealVotes, nextIssue, resetVotes, updateIssueName } from "@/app/actions"
 
 type Props = {
   code: string
@@ -112,6 +112,7 @@ export function FacilitatorBar({
   const [nextIssueDialogOpen, setNextIssueDialogOpen] = useState(false)
   const [nextIssueName, setNextIssueName] = useState("")
   const [loading, setLoading] = useState(false)
+  const [resettingVotes, setResettingVotes] = useState(false)
 
   async function handleReveal() {
     await revealVotes(code, facilitatorId)
@@ -140,6 +141,13 @@ export function FacilitatorBar({
     onAction?.()
   }
 
+  async function handleResetVotes() {
+    setResettingVotes(true)
+    await resetVotes(code, facilitatorId)
+    setResettingVotes(false)
+    onAction?.()
+  }
+
   return (
     <>
       <div className="flex flex-col items-center gap-4">
@@ -153,21 +161,49 @@ export function FacilitatorBar({
           />
         )}
         <div className="flex items-center gap-3">
-          {!revealed && (
-            <Button variant="default" size="default" onClick={handleReveal}>
-              <Eye className="size-4" />
-              Reveal votes
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="default"
-            onClick={handleNextClick}
-            disabled={loading}
-          >
-            <ArrowBigRightDash className="size-4" />
-            Next issue
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="default"
+                size="default"
+                onClick={handleReveal}
+                disabled={revealed}
+                aria-label="Reveal votes"
+              >
+                <Eye className="size-4" />
+                Reveal votes
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reveal votes</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleResetVotes}
+                disabled={resettingVotes}
+                aria-label="Reset votes"
+              >
+                <Eraser className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reset votes</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleNextClick}
+                disabled={loading}
+                aria-label="Next issue"
+              >
+                <ArrowBigRightDash className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Next issue</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

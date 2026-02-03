@@ -189,7 +189,7 @@ export function GameView({ room, participantId, isFacilitator, refetch, showShar
           ))}
         </TableLayout>
 
-        {canVote && !room.revealed && (
+        {canVote && (
           <div className="mt-12 p-6 rounded-lg border bg-card">
             <h3 className="text-sm font-medium mb-3">Your vote</h3>
             <VoteInput

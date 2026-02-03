@@ -16,6 +16,7 @@ import {
   getRoom,
   joinRoom as joinRoomRepo,
   nextIssue as nextIssueRepo,
+  resetVotes as resetVotesRepo,
   revealVotes as revealVotesRepo,
   submitVote as submitVoteRepo,
   updateIssueName as updateIssueNameRepo,
@@ -68,6 +69,16 @@ export async function revealVotes(code: string, facilitatorId: string) {
     return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
   }
   const result = await revealVotesRepo(parsed.data.code, parsed.data.facilitatorId)
+  if ("error" in result) return { error: result.error }
+  return { room: result }
+}
+
+export async function resetVotes(code: string, facilitatorId: string) {
+  const parsed = facilitatorActionSchema.safeParse({ code, facilitatorId })
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().formErrors[0] ?? "Invalid input" }
+  }
+  const result = await resetVotesRepo(parsed.data.code, parsed.data.facilitatorId)
   if ("error" in result) return { error: result.error }
   return { room: result }
 }
