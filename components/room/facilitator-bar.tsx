@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Eye, ArrowBigRightDash, CircleCheckBig } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,6 +44,13 @@ function IssueNameInput({
   const [updatingIssue, setUpdatingIssue] = useState(false)
   const [issueNameSaved, setIssueNameSaved] = useState(false)
   const issueNameInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync input when currentIssueName changes (e.g. after "Next issue")
+  useEffect(() => {
+    const next = currentIssueName ?? ""
+    const id = requestAnimationFrame(() => setIssueNameValue(next))
+    return () => cancelAnimationFrame(id)
+  }, [currentIssueName])
 
   const hasIssueNameEdit =
     issueNameValue.trim() !== (currentIssueName ?? "")
